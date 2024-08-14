@@ -41,7 +41,7 @@ def app():
                 
                 # Identify rows in the current file that are not in the combined set of other files
                 diff_df = df_subset.merge(combined_other_df, on=selected_columns, how='left', indicator=True)
-                unique_rows = diff_df[diff_df['_merge'] == 'left_only'].drop('_merge', axis=1)
+                unique_rows = df[df[selected_columns].isin(diff_df[diff_df['_merge'] == 'left_only'][selected_columns].to_dict('list')).all(axis=1)]
 
                 unique_count = len(unique_rows)
 
