@@ -43,8 +43,10 @@ def app():
                 diff_df = df_subset.merge(combined_other_df, on=selected_columns, how='left', indicator=True)
                 unique_rows = diff_df[diff_df['_merge'] == 'left_only'].drop('_merge', axis=1)
 
-                if not unique_rows.empty:
-                    st.subheader(f"Unique Rows in {file_name}")
+                unique_count = len(unique_rows)
+
+                if unique_count > 0:
+                    st.subheader(f"{unique_count} Unique Rows in {file_name}")
                     st.write(unique_rows)
                 else:
                     st.write(f"No unique rows found in {file_name} based on selected columns.")
