@@ -10,96 +10,43 @@ def app():
     multiple_csv_files = st.file_uploader("Upload CSV files to compare", type=["csv"], accept_multiple_files=True)
 
     if multiple_csv_files:
-        # Initialize a list to store DataFrames without the global filter
-        all_dfs = []
+        # Initialize a dictionary to store DataFrames
+        file_dfs = {}
 
         for csv_file in multiple_csv_files:
             df = pd.read_csv(csv_file)
-            df['source_file'] = csv_file.name  # Add a column to track the source file
-            all_dfs.append(df)  # Store the unfiltered DataFrame for comparison
+            file_dfs[csv_file.name] = df
 
-            # Apply the global filter to the view of the individual file if a filter value is provided
-            display_df = df.copy()
-            global_filter_value = st.text_input(f"Global Filter for {csv_file.name}", "")
-            if global_filter_value:
-                condition = pd.Series([True] * len(display_df))
-                for col in display_df.columns:
-                    if col in df.select_dtypes(include=['object', 'string']).columns:
-                        condition &= display_df[col].astype(str).str.contains(global_filter_value, na=False, case=False)
-                display_df = display_df[condition]
-
-            # Display the content of each file after applying the global filter for view only
-            st.subheader(f"Content of {csv_file.name} (Filtered View)")
-            st.write(display_df)
+            # Display the content of each file
+            st.subheader(f"Content of {csv_file.name}")
+            st.write(df)
         
-        # Concatenate all files into a single DataFrame for comparison (without the global view filter)
-        combined_df = pd.concat(all_dfs, ignore_index=True)
-        
-        # Update the columns list with the concatenated DataFrame's columns
+        # Ask the user to select columns for comparison
+        combined_df = pd.concat(file_dfs.values(), ignore_index=True)
         columns = combined_df.columns.tolist()
 
         st.subheader("Select Columns to Compare")
         selected_columns = st.multiselect("Choose columns to compare", columns)
 
         if selected_columns:
-            # Apply the global filter again to the combined DataFrame based on selected columns
-            if global_filter_value:
-                condition = pd.Series([True] * len(combined_df))
-                for col in selected_columns:
-                    condition &= combined_df[col].astype(str).str.contains(global_filter_value, na=False, case=False)
-                combined_df = combined_df[condition]
+            st.subheader("Rows Present in One File But Not in Others")
 
-            # Find rows with the same values in the selected columns but different across files
-            grouped = combined_df.groupby(selected_columns)
-
-            differences = []
-            for _, group in grouped:
-                if len(group['source_file'].unique()) > 1:
-                    differences.append(group)
-            
-            if differences:
-                differences_df = pd.concat(differences)
-
-                st.subheader("Differences Found Across Files")
-                filtered_diff_df = differences_df.copy()
-
-                # Add individual filter fields for each selected column
-                for col in selected_columns:
-                    filter_value = st.text_input(f"Filter {col}", "")
-                    if filter_value:
-                        filtered_diff_df = filtered_diff_df[filtered_diff_df[col].astype(str).str.contains(filter_value, na=False, case=False)]
+            # Find the unique rows for each file based on selected columns
+            for file_name, df in file_dfs.items():
+                df_subset = df[selected_columns].drop_duplicates()
+                other_dfs = [file_dfs[other_file][selected_columns].drop_duplicates() 
+                             for other_file in file_dfs if other_file != file_name]
                 
-                st.write(filtered_diff_df)
-
-                # Prepare the summary table for differences per file
-                file_diff_counts = differences_df.groupby(['source_file'] + selected_columns).size().reset_index(name='Difference Count')
-                file_diff_counts_sorted = file_diff_counts.sort_values(by=['source_file', 'Difference Count'], ascending=[True, False])
-
-                st.subheader("Summary of Differences Found Per File")
-                filtered_file_diff_df = file_diff_counts_sorted.copy()
-
-                # Apply the global filter to the summary table as well
-                if global_filter_value:
-                    condition = pd.Series([True] * len(filtered_file_diff_df))
-                    for col in selected_columns:
-                        condition &= filtered_file_diff_df[col].astype(str).str.contains(global_filter_value, na=False, case=False)
-                    filtered_file_diff_df = filtered_file_diff_df[condition]
-
-                # Add individual filter fields for the source file and each selected column in the per-file summary
-                filter_value_source = st.text_input("Filter source_file", "")
-                if filter_value_source:
-                    filtered_file_diff_df = filtered_file_diff_df[filtered_file_diff_df['source_file'].astype(str).str.contains(filter_value_source, na=False, case=False)]
+                combined_other_df = pd.concat(other_dfs).drop_duplicates()
                 
-                for col in selected_columns:
-                    filter_value = st.text_input(f"Filter {col} (Per File)", "")
-                    if filter_value:
-                        filtered_file_diff_df = filtered_file_diff_df[filtered_file_diff_df[col].astype(str).str.contains(filter_value, na=False, case=False)]
+                # Identify rows in the current file that are not in the combined set of other files
+                diff_df = df_subset.merge(combined_other_df, on=selected_columns, how='left', indicator=True)
+                unique_rows = diff_df[diff_df['_merge'] == 'left_only'].drop('_merge', axis=1)
 
-                st.write(filtered_file_diff_df)
-            else:
-                st.write("No differences found across the uploaded files.")
+                if not unique_rows.empty:
+                    st.subheader(f"Unique Rows in {file_name}")
+                    st.write(unique_rows)
+                else:
+                    st.write(f"No unique rows found in {file_name} based on selected columns.")
         else:
             st.write("Please select columns to compare.")
-
-if __name__ == "__main__":
-    app()
