@@ -17,8 +17,8 @@ def app():
             df = pd.read_csv(csv_file)
             file_dfs[csv_file.name] = df
 
-            # Display the content of each file
-            st.subheader(f"Content of {csv_file.name}")
+            # Display the content of each file along with the row count
+            st.subheader(f"Content of {csv_file.name} (Total Rows: {len(df)})")
             st.write(df)
         
         # Ask the user to select columns for comparison
