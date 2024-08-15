@@ -19,6 +19,9 @@ def app():
             # Read each CSV file into a DataFrame
             df = pd.read_csv(file)
             
+            # Add a column with the file name
+            df['source_file'] = file.name
+            
             # Combine into a single DataFrame
             combined_df = pd.concat([combined_df, df], ignore_index=True)
             
@@ -47,4 +50,3 @@ def app():
     if st.checkbox("Show table structure"):
         st.write("Combined Table Structure:")
         st.dataframe(con.execute("DESCRIBE files").fetchdf())
-   
