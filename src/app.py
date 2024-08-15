@@ -2,11 +2,13 @@ import streamlit as st
 from duplicates_for_one_file import app as duplicates_one_file
 from duplicates_across_files import app as duplicates_across_files
 from compare_across_files import app as compare_across_files
+from query_files import app as query_files
 
 PAGES = {
     "Check Duplicates": duplicates_one_file,
     "Check Duplicates Across Files": duplicates_across_files,
-    "Compare CSV Files": compare_across_files
+    "Compare CSV Files": compare_across_files,
+    "SQL Query Files": query_files
 }
 
 st.sidebar.title('Navigation')
