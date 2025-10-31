@@ -1,36 +1,51 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="Data Utils Tool",
-    page_icon="🔧"
+    page_title="Data Utils - CSV Analysis Tools",
+    page_icon="🔧",
+    initial_sidebar_state="expanded",
+    layout="wide"
 )
 
 st.logo("src/logo.png")
 
-# Define your pages with better icons
-p1 = st.Page(
-    "duplicates_for_one_file.py",
-    title="Check Duplicates",
-    icon="🗂️"  # Folder icon to represent file operations
-)
+# Define pages organized by category
+duplicate_tools = [
+    st.Page(
+        "duplicates_for_one_file.py",
+        title="Compare Against Primary File",
+        icon="🗂️"
+    ),
+    st.Page(
+        "duplicates_across_files.py",
+        title="Find Duplicates Across Files",
+        icon="🔍"
+    ),
+    st.Page(
+        "duplicate_report_by_column.py",
+        title="Duplicate Analysis Report",
+        icon="📋"
+    ),
+]
 
-p2 = st.Page(
-    "duplicates_across_files.py",
-    title="Check Duplicates Across Files",
-    icon="🔍"  # Magnifying glass to represent search or inspection
-)
+analysis_tools = [
+    st.Page(
+        "compare_across_files.py",
+        title="Compare Files (Unique Rows)",
+        icon="📊"
+    ),
+    st.Page(
+        "query_files.py",
+        title="SQL Query Builder",
+        icon="🧮"
+    ),
+]
 
-p3 = st.Page(
-    "compare_across_files.py",
-    title="Compare CSV Files",
-    icon="📊"  # Bar chart to represent comparison or analytics
+pg = st.navigation(
+    {
+        "🔍 Duplicate Detection": duplicate_tools,
+        "📊 Data Analysis": analysis_tools,
+    },
+    position="sidebar"
 )
-
-p4 = st.Page(
-    "query_files.py",
-    title="SQL Query Files",
-    icon="🧮"  # Abacus to represent SQL queries and calculations
-)
-
-pg = st.navigation([p1, p2, p3, p4])
 pg.run()
