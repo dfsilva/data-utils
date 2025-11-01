@@ -51,7 +51,7 @@ if multiple_csv_files:
         with st.expander("👁️ Preview Uploaded Files", expanded=False):
             for csv_file, df in zip(multiple_csv_files, all_dfs):
                 st.markdown(f"**{csv_file.name}** ({len(df):,} rows)")
-                st.dataframe(df.drop(columns=['source_file']).head(10), use_container_width=True)
+                st.dataframe(df.drop(columns=['source_file']).head(10), width="stretch")
                 st.divider()
 
         st.divider()
@@ -105,7 +105,7 @@ if multiple_csv_files:
                                     )
                                 ]
 
-                st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+                st.dataframe(filtered_df, width="stretch", hide_index=True)
 
                 # Download option
                 csv_summary = filtered_df.to_csv(index=False)
@@ -161,7 +161,7 @@ if multiple_csv_files:
                                     )
                                 ]
 
-                st.dataframe(filtered_file_df, use_container_width=True, hide_index=True)
+                st.dataframe(filtered_file_df, width="stretch", hide_index=True)
 
                 # Download option
                 csv_file_breakdown = filtered_file_df.to_csv(index=False)

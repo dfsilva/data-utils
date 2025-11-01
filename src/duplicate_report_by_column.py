@@ -34,7 +34,7 @@ if csv_file is not None:
 
     # Preview in expandable section
     with st.expander("👁️ Preview File Data", expanded=False):
-        st.dataframe(df.head(20), use_container_width=True)
+        st.dataframe(df.head(20), width="stretch")
 
     st.divider()
 
@@ -99,7 +99,7 @@ if csv_file is not None:
             return [''] * len(row)
 
         styled_report = report_df.style.apply(highlight_duplicates, axis=1)
-        st.dataframe(styled_report, use_container_width=True, hide_index=True)
+        st.dataframe(styled_report, width="stretch", hide_index=True)
 
         # Download report
         csv_report = report_df.to_csv(index=False)
@@ -176,7 +176,7 @@ if csv_file is not None:
 
                 st.dataframe(
                     duplicated_values.sort_values('Count', ascending=False),
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True
                 )
 

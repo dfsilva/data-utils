@@ -37,7 +37,7 @@ if single_csv_file is not None:
 
     # Preview in expander
     with st.expander("👁️ Preview Primary File Data", expanded=False):
-        st.dataframe(single_df.head(20), use_container_width=True)
+        st.dataframe(single_df.head(20), width="stretch")
 
     st.divider()
 
@@ -101,7 +101,7 @@ if single_csv_file is not None:
 
                     # Show uploaded files in expander
                     with st.expander(f"📄 {csv_file.name} ({len(filtered_df):,} rows)", expanded=False):
-                        st.dataframe(filtered_df, use_container_width=True)
+                        st.dataframe(filtered_df, width="stretch")
 
                     # Find duplicates
                     duplicates = df.merge(single_df[selected_columns], on=selected_columns, how='inner')
@@ -141,7 +141,7 @@ if single_csv_file is not None:
                                     )
                                 ]
 
-                st.dataframe(filtered_summary_df, use_container_width=True, hide_index=True)
+                st.dataframe(filtered_summary_df, width="stretch", hide_index=True)
 
                 # Download option
                 csv_summary = filtered_summary_df.to_csv(index=False)
@@ -192,7 +192,7 @@ if single_csv_file is not None:
                                     )
                                 ]
 
-                st.dataframe(filtered_file_df, use_container_width=True, hide_index=True)
+                st.dataframe(filtered_file_df, width="stretch", hide_index=True)
 
                 # Download option
                 csv_file_breakdown = filtered_file_df.to_csv(index=False)

@@ -52,7 +52,7 @@ if multiple_csv_files:
         with st.expander("👁️ Preview Uploaded Files", expanded=False):
             for file_name, df in file_dfs.items():
                 st.markdown(f"**{file_name}** ({len(df):,} rows, {len(df.columns)} columns)")
-                st.dataframe(df.head(10), use_container_width=True)
+                st.dataframe(df.head(10), width="stretch")
                 st.divider()
 
         st.divider()
@@ -108,7 +108,7 @@ if multiple_csv_files:
                         found_any_unique = True
                         with st.expander(f"📄 {file_name} - {unique_count:,} unique row(s)", expanded=True):
                             st.info(f"These {unique_count:,} rows exist in **{file_name}** but not in any other uploaded file.")
-                            st.dataframe(unique_rows, use_container_width=True, hide_index=True)
+                            st.dataframe(unique_rows, width="stretch", hide_index=True)
 
                             # Download option
                             csv_unique = unique_rows.to_csv(index=False)

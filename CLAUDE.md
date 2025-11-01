@@ -74,6 +74,24 @@ The SQL query tool uses `streamlit-code-editor` to provide:
 
 The editor has a "Run Query" button built-in and gracefully falls back to a text area if the code editor component is not installed.
 
+### Query History with Browser localStorage
+
+The SQL Query Builder includes persistent query history using browser localStorage:
+- **Browser localStorage** - Query history is automatically saved to your browser's localStorage
+- **Survives refreshes** - History persists across browser refreshes and app restarts (same browser)
+- **No server storage** - All data stays in your browser, ensuring privacy
+- **Success/Failure tracking** - Each query is marked with ✅ (success) or ❌ (failed)
+- **Timestamp tracking** - Shows when each query was executed
+- **Search functionality** - Filter through query history
+- **One-click reuse** - Click any query to load it into the editor
+- **Error messages** - Failed queries show the error message for debugging
+- **Clear history** - Button to clear all query history from localStorage
+- **Up to 50 queries** - Automatically maintains the last 50 executed queries
+- **Always visible** - History appears at the top of the page, even before uploading files
+- **Browser-specific** - Each browser maintains its own history
+
+**Requires**: `streamlit-js-eval` library for localStorage integration. The feature gracefully degrades to session-only storage if the library is not installed.
+
 ## UX Design Patterns
 
 All pages follow consistent UX patterns for better usability:
