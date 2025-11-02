@@ -195,6 +195,22 @@ if uploaded_files:
     history = load_query_history()
     recent_successful = [q for q in history if q['success']][:5]
 
+    # Add quick export button if there's history
+    if history:
+        col_export, col_spacer = st.columns([1, 3])
+        with col_export:
+            history_sql = export_query_history_to_sql()
+            st.download_button(
+                label="💾 Export All Query History",
+                data=history_sql,
+                file_name=f"query_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
+                mime="text/plain",
+                width='stretch',
+                help=f"Download all {len(history)} queries as a single SQL file",
+                type="secondary"
+            )
+        st.divider()
+
     if recent_successful:
         st.subheader("⚡ Recent Successful Queries")
         st.caption("Quick access to your recently executed queries")
@@ -217,31 +233,26 @@ if uploaded_files:
     st.subheader("💻 Write SQL Query")
 
     # Add option to load SQL file
-    col_caption, col_upload = st.columns([3, 1])
-    with col_caption:
-        st.caption("Query the 'files' table using SQL. Use autocomplete (Ctrl+Space) for suggestions.")
-    with col_upload:
+    st.caption("Query the 'files' table using SQL. Use autocomplete (Ctrl+Space) for suggestions.")
+
+    with st.expander("📂 Load SQL File", expanded=False):
         uploaded_sql = st.file_uploader(
-            "📂 Load .sql file",
+            "Choose a .sql or .txt file",
             type=["sql", "txt"],
             key="sql_uploader",
-            help="Upload a .sql or .txt file to load into the editor",
-            label_visibility="visible"
+            help="Upload a .sql or .txt file to load into the editor"
         )
 
-        # Process uploaded file only once
         if uploaded_sql is not None:
-            # Create a unique identifier for this upload
-            upload_id = f"{uploaded_sql.name}_{uploaded_sql.size}"
-            last_upload_id = st.session_state.get('last_sql_upload_id', None)
+            # Show file info
+            st.info(f"📄 File: **{uploaded_sql.name}** ({uploaded_sql.size} bytes)")
 
-            # Only process if this is a new upload
-            if upload_id != last_upload_id:
+            # Add load button
+            if st.button("✅ Load This Query", type="primary", key="load_sql_btn"):
                 try:
                     sql_content = uploaded_sql.read().decode('utf-8')
                     st.session_state['loaded_query'] = sql_content
                     st.session_state['loaded_query_filename'] = uploaded_sql.name
-                    st.session_state['last_sql_upload_id'] = upload_id
                     st.rerun()
                 except Exception as e:
                     st.error(f"❌ Error reading file: {str(e)}")
@@ -302,23 +313,21 @@ if uploaded_files:
             st.caption("Find most common values by file")
 
     # Use code editor if available, otherwise fallback to text_area
-    # Initialize editor_key counter if not exists
-    if 'editor_key_counter' not in st.session_state:
-        st.session_state.editor_key_counter = 0
+    # Initialize persistent editor content if not exists
+    if 'editor_content' not in st.session_state:
+        st.session_state.editor_content = "SELECT * FROM files LIMIT 10"
 
-    # Initialize current query in session state if not exists
-    if 'current_editor_query' not in st.session_state:
-        st.session_state.current_editor_query = "SELECT * FROM files LIMIT 10"
-
-    # Check if a query was loaded from history or quick queries
     query_was_loaded = False
     auto_run = st.session_state.get('auto_run_query', False)
     loaded_filename = None
+    force_refresh = False
 
+    # Check if a query was explicitly loaded (from history, quick query, or file)
     if 'loaded_query' in st.session_state:
-        # New query loaded - update the editor
-        st.session_state.current_editor_query = st.session_state['loaded_query']
+        # Update the persistent editor content
+        st.session_state.editor_content = st.session_state['loaded_query']
         query_was_loaded = True
+        force_refresh = True  # Force editor to refresh with new content
 
         # Check if this was from a file upload
         if 'loaded_query_filename' in st.session_state:
@@ -326,10 +335,9 @@ if uploaded_files:
             del st.session_state['loaded_query_filename']
 
         del st.session_state['loaded_query']
-        # Increment key to force editor refresh with new query
-        st.session_state.editor_key_counter += 1
 
-    default_query = st.session_state.current_editor_query
+    # Use the persistent editor content
+    default_query = st.session_state.editor_content
 
     if query_was_loaded:
         if loaded_filename:
@@ -394,8 +402,19 @@ if uploaded_files:
 
             completions = sql_keywords + column_completions
 
-            # Use a unique key to force refresh only when loading a new query
-            editor_key = f"sql_editor_{st.session_state.editor_key_counter}"
+            # Maintain consistent editor key, only change when forcing refresh
+            if 'current_editor_key' not in st.session_state:
+                st.session_state.current_editor_key = "sql_editor"
+
+            if force_refresh:
+                # Generate a unique key to force editor to reload with new content
+                if 'force_refresh_counter' not in st.session_state:
+                    st.session_state.force_refresh_counter = 0
+                st.session_state.force_refresh_counter += 1
+                st.session_state.current_editor_key = f"sql_editor_refresh_{st.session_state.force_refresh_counter}"
+
+            # Always use the current key (don't switch back and forth)
+            editor_key = st.session_state.current_editor_key
 
             response_dict = code_editor(
                 code=default_query,
@@ -441,17 +460,33 @@ if uploaded_files:
         if not HAS_CODE_EDITOR:
             st.warning("💡 Install `streamlit-code-editor` for enhanced SQL editing with autocomplete: `pip install streamlit-code-editor`")
 
+        # Maintain consistent textarea key, only change when forcing refresh
+        if 'current_textarea_key' not in st.session_state:
+            st.session_state.current_textarea_key = "sql_textarea"
+
+        if force_refresh:
+            if 'force_refresh_counter' not in st.session_state:
+                st.session_state.force_refresh_counter = 0
+            st.session_state.force_refresh_counter += 1
+            st.session_state.current_textarea_key = f"sql_textarea_refresh_{st.session_state.force_refresh_counter}"
+
+        # Always use the current key (don't switch back and forth)
+        textarea_key = st.session_state.current_textarea_key
+
         query = st.text_area(
             "Enter your SQL query",
             value=default_query,
             height=150,
             help="Write your SQL query here",
-            key=f"sql_textarea_{st.session_state.editor_key_counter}"
+            key=textarea_key
         )
         run_query = st.button("▶️ Run Query", type="primary")
 
     # Execute query (either manually or auto-run from quick queries)
     if (run_query or auto_run) and query:
+        # Update persistent editor content with what was actually executed
+        st.session_state.editor_content = query
+
         st.divider()
 
         try:
@@ -510,7 +545,7 @@ if uploaded_files:
         except Exception as e:
             error_msg = str(e)
 
-            # Save failed query to history
+            # Save failed query to history (editor_content already updated above)
             add_query_to_history(query, success=False, error_msg=error_msg)
 
             st.error(f"❌ Query Error")
