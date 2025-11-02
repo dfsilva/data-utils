@@ -5,7 +5,8 @@
       "Bash(pip install:*)",
       "Bash(timeout 5 streamlit run:*)",
       "Bash(python:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(timeout 10 streamlit run:*)"
     ],
     "deny": [],
     "ask": []
