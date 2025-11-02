@@ -229,15 +229,22 @@ if uploaded_files:
             label_visibility="visible"
         )
 
+        # Process uploaded file only once
         if uploaded_sql is not None:
-            try:
-                sql_content = uploaded_sql.read().decode('utf-8')
-                st.session_state['loaded_query'] = sql_content
-                st.session_state.editor_key_counter += 1
-                st.success(f"✅ Loaded {uploaded_sql.name}")
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Error reading file: {str(e)}")
+            # Create a unique identifier for this upload
+            upload_id = f"{uploaded_sql.name}_{uploaded_sql.size}"
+            last_upload_id = st.session_state.get('last_sql_upload_id', None)
+
+            # Only process if this is a new upload
+            if upload_id != last_upload_id:
+                try:
+                    sql_content = uploaded_sql.read().decode('utf-8')
+                    st.session_state['loaded_query'] = sql_content
+                    st.session_state['loaded_query_filename'] = uploaded_sql.name
+                    st.session_state['last_sql_upload_id'] = upload_id
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error reading file: {str(e)}")
 
     # Quick query buttons for common operations
     st.markdown("**🚀 Quick Queries:**")
@@ -306,11 +313,18 @@ if uploaded_files:
     # Check if a query was loaded from history or quick queries
     query_was_loaded = False
     auto_run = st.session_state.get('auto_run_query', False)
+    loaded_filename = None
 
     if 'loaded_query' in st.session_state:
         # New query loaded - update the editor
         st.session_state.current_editor_query = st.session_state['loaded_query']
         query_was_loaded = True
+
+        # Check if this was from a file upload
+        if 'loaded_query_filename' in st.session_state:
+            loaded_filename = st.session_state['loaded_query_filename']
+            del st.session_state['loaded_query_filename']
+
         del st.session_state['loaded_query']
         # Increment key to force editor refresh with new query
         st.session_state.editor_key_counter += 1
@@ -318,7 +332,13 @@ if uploaded_files:
     default_query = st.session_state.current_editor_query
 
     if query_was_loaded:
-        st.success("✅ Query loaded!")
+        if loaded_filename:
+            st.success(f"✅ Loaded query from {loaded_filename}")
+            # Show preview of loaded query
+            with st.expander("📄 Preview of loaded query", expanded=False):
+                st.code(default_query[:200] + "..." if len(default_query) > 200 else default_query, language="sql")
+        else:
+            st.success("✅ Query loaded!")
 
     # Clear the auto_run flag immediately to prevent repeated execution
     if auto_run and 'auto_run_query' in st.session_state:
